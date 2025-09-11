@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 from scipy.io import wavfile
 from scipy import signal
 from detectors import S3FD
-from syncnet_python.SyncNetInstance import SyncNetInstance
+from SyncNetInstance import SyncNetInstance
 
 # ========== PARSE ARGS ==========
 
