@@ -10,7 +10,7 @@ import python_speech_features
 
 from scipy import signal
 from scipy.io import wavfile
-from SyncNetModel import *
+from .SyncNetModel import *
 from shutil import rmtree
 
 
