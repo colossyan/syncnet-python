@@ -465,7 +465,10 @@ def run_visualise(videofile, reference, data_dir, frame_rate=25):
             'error': str(e)
         }
 
-def run_complete_pipeline(videofile, reference, data_dir, model_path="data/syncnet_v2.model", **kwargs):
+def run_complete_pipeline(videofile, reference, data_dir, model_path="data/syncnet_v2.model", 
+                         facedet_scale=0.25, crop_scale=0.40, min_track=100, 
+                         frame_rate=25, num_failed_det=25, min_face_size=100,
+                         batch_size=20, vshift=15):
     """
     Run the complete pipeline (all three steps)
     
@@ -474,28 +477,57 @@ def run_complete_pipeline(videofile, reference, data_dir, model_path="data/syncn
         reference (str): Video reference name
         data_dir (str): Output directory
         model_path (str): Path to pre-trained model
-        **kwargs: Additional parameters for each step
+        facedet_scale (float): Face detection scale factor
+        crop_scale (float): Crop scale factor
+        min_track (int): Minimum track duration
+        frame_rate (int): Video frame rate
+        num_failed_det (int): Number of failed detections allowed
+        min_face_size (int): Minimum face size in pixels
+        batch_size (int): Batch size for SyncNet
+        vshift (int): Video shift parameter
     
     Returns:
         dict: Complete pipeline results
     """
     
-    print("🎬 Running complete SyncNet pipeline...")
+    print("�� Running complete SyncNet pipeline...")
     
     # Step 1: Preprocessing
-    pipeline_results = run_pipeline(videofile, reference, data_dir, **kwargs)
+    pipeline_results = run_pipeline(
+        videofile=videofile,
+        reference=reference,
+        data_dir=data_dir,
+        facedet_scale=facedet_scale,
+        crop_scale=crop_scale,
+        min_track=min_track,
+        frame_rate=frame_rate,
+        num_failed_det=num_failed_det,
+        min_face_size=min_face_size
+    )
     
     if pipeline_results['status'] != 'success':
         return pipeline_results
     
     # Step 2: SyncNet analysis
-    syncnet_results = run_syncnet(videofile, reference, data_dir, model_path)
+    syncnet_results = run_syncnet(
+        videofile=videofile,
+        reference=reference,
+        data_dir=data_dir,
+        initial_model=model_path,
+        batch_size=batch_size,
+        vshift=vshift
+    )
     
     if syncnet_results['status'] != 'success':
         return syncnet_results
     
     # Step 3: Visualization
-    visualise_results = run_visualise(videofile, reference, data_dir)
+    visualise_results = run_visualise(
+        videofile=videofile,
+        reference=reference,
+        data_dir=data_dir,
+        frame_rate=frame_rate
+    )
     
     return {
         'status': 'success',
