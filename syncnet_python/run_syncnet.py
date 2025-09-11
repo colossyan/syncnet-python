@@ -3,7 +3,7 @@
 
 import time, pdb, argparse, subprocess, pickle, os, gzip, glob
 
-from SyncNetInstance import *
+from syncnet_python.SyncNetInstance import *
 
 # ==================== PARSE ARGUMENT ====================
 
