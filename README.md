@@ -1,5 +1,7 @@
 # SyncNet
 
+> **Fork Notice**: This is a fork of the original [SyncNet repository](https://github.com/joonson/syncnet_python) by Joon Son Chung. This fork is maintained by [Colossyan](https://github.com/colossyan).
+
 This repository contains the demo for the audio-to-video synchronisation network (SyncNet). This network can be used for audio-visual synchronisation tasks including: 
 1. Removing temporal lags between the audio and visual streams in a video;
 2. Determining who is speaking amongst multiple faces in a video. 
