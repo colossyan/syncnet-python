@@ -139,7 +139,8 @@ def crop_video(opt, track, cropfile):
         
         vOut.write(cv2.resize(face, (224, 224)))
     
-    audiotmp = os.path.join(opt.tmp_dir, opt.reference, 'audio.wav')
+    # Fix: Use the correct audio path
+    audiotmp = os.path.join(opt.avi_dir, opt.reference, 'audio.wav')
     audiostart = (track['frame'][0]) / opt.frame_rate
     audioend = (track['frame'][-1]) / opt.frame_rate
     
@@ -276,17 +277,32 @@ def run_pipeline(videofile, reference, data_dir, facedet_scale=0.25, crop_scale=
         print("🔄 Converting video and extracting frames...")
         command = ("ffmpeg -y -i %s -qscale:v 2 -async 1 -r 25 %s" % 
                   (opt.videofile, os.path.join(opt.avi_dir, opt.reference, 'video.avi')))
-        subprocess.call(command, shell=True, stdout=None)
+        result = subprocess.call(command, shell=True, stdout=None)
+        if result != 0:
+            print(f"⚠️  Video conversion returned code {result}")
         
         command = ("ffmpeg -y -i %s -qscale:v 2 -threads 1 -f image2 %s" % 
                   (os.path.join(opt.avi_dir, opt.reference, 'video.avi'), 
                    os.path.join(opt.frames_dir, opt.reference, '%06d.jpg')))
-        subprocess.call(command, shell=True, stdout=None)
+        result = subprocess.call(command, shell=True, stdout=None)
+        if result != 0:
+            print(f"⚠️  Frame extraction returned code {result}")
         
         command = ("ffmpeg -y -i %s -ac 1 -vn -acodec pcm_s16le -ar 16000 %s" % 
                   (os.path.join(opt.avi_dir, opt.reference, 'video.avi'), 
                    os.path.join(opt.avi_dir, opt.reference, 'audio.wav')))
-        subprocess.call(command, shell=True, stdout=None)
+        result = subprocess.call(command, shell=True, stdout=None)
+        if result != 0:
+            print(f"⚠️  Audio extraction returned code {result}")
+        
+        # Check if audio file was created
+        audio_file = os.path.join(opt.avi_dir, opt.reference, 'audio.wav')
+        if not os.path.exists(audio_file):
+            print(f"❌ Audio file not created: {audio_file}")
+            return {
+                'status': 'error',
+                'error': f'Audio extraction failed: {audio_file} not found'
+            }
         
         # Face detection
         print("👤 Running face detection...")
@@ -490,7 +506,7 @@ def run_complete_pipeline(videofile, reference, data_dir, model_path="data/syncn
         dict: Complete pipeline results
     """
     
-    print("�� Running complete SyncNet pipeline...")
+    print("🎬 Running complete SyncNet pipeline...")
     
     # Step 1: Preprocessing
     pipeline_results = run_pipeline(
