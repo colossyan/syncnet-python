@@ -1,8 +1,9 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
-import time, os, pdb, argparse, pickle, subprocess, glob, cv2
+import sys, time, os, pdb, argparse, pickle, subprocess, glob, cv2, gzip
 import numpy as np
 from shutil import rmtree
+import scenedetect
 from scenedetect.video_manager import VideoManager
 from scenedetect.scene_manager import SceneManager
 from scenedetect.frame_timecode import FrameTimecode
@@ -12,42 +13,36 @@ from scipy.interpolate import interp1d
 from scipy.io import wavfile
 from scipy import signal
 from detectors import S3FD
-from SyncNetInstance import SyncNetInstance
+from syncnet_python.SyncNetInstance import SyncNetInstance
 
 # ========== PARSE ARGS ==========
 
-parser = argparse.ArgumentParser(description="FaceTracker and SyncNet")
-parser.add_argument('--data_dir', type=str, default='data/work', help='Output directory')
-parser.add_argument('--videofile', type=str, default='', help='Input video file')
-parser.add_argument('--reference', type=str, default='', help='Video reference')
-parser.add_argument('--facedet_scale', type=float, default=0.25, help='Scale factor for face detection')
-parser.add_argument('--crop_scale', type=float, default=0.40, help='Scale bounding box')
-parser.add_argument('--min_track', type=int, default=100, help='Minimum facetrack duration')
-parser.add_argument('--frame_rate', type=int, default=25, help='Frame rate')
-parser.add_argument('--num_failed_det', type=int, default=25, help='Number of missed detections allowed before tracking is stopped')
-parser.add_argument('--min_face_size', type=int, default=100, help='Minimum face size in pixels')
-parser.add_argument('--s3fd_model', type=str, default='detectors/s3fd/weights/sfd_face.pth', help='Path to S3FD model file')
-parser.add_argument('--syncnet_model', type=str, default='/data/ahmad/syncnet_python/data/syncnet_v2.model', help='Path to SyncNet model file')
-parser.add_argument('--batch_size', type=int, default=20, help='Batch size for SyncNet evaluation')
-parser.add_argument('--vshift', type=int, default=15, help='Video shift for SyncNet evaluation')
-opt = parser.parse_args()
+def parse_args():
+    """Parse command-line arguments and set directory attributes."""
+    parser = argparse.ArgumentParser(description="FaceTracker and SyncNet")
+    parser.add_argument('--data_dir', type=str, default='data/work', help='Output directory')
+    parser.add_argument('--videofile', type=str, default='', help='Input video file')
+    parser.add_argument('--reference', type=str, default='', help='Video reference')
+    parser.add_argument('--facedet_scale', type=float, default=0.25, help='Scale factor for face detection')
+    parser.add_argument('--crop_scale', type=float, default=0.40, help='Scale bounding box')
+    parser.add_argument('--min_track', type=int, default=100, help='Minimum facetrack duration')
+    parser.add_argument('--frame_rate', type=int, default=25, help='Frame rate')
+    parser.add_argument('--num_failed_det', type=int, default=25, help='Number of missed detections allowed before tracking is stopped')
+    parser.add_argument('--min_face_size', type=int, default=100, help='Minimum face size in pixels')
+    parser.add_argument('--s3fd_model', type=str, default='data/s3fd.model', help='Path to S3FD model file')
+    parser.add_argument('--syncnet_model', type=str, default='data/syncnet_v2.model', help='Path to SyncNet model file')
+    parser.add_argument('--batch_size', type=int, default=20, help='Batch size for SyncNet evaluation')
+    parser.add_argument('--vshift', type=int, default=15, help='Video shift for SyncNet evaluation')
+    opt = parser.parse_args()
 
-# Set directory attributes
-setattr(opt, 'avi_dir', os.path.join(opt.data_dir, 'pyavi'))
-setattr(opt, 'tmp_dir', os.path.join(opt.data_dir, 'pytmp'))
-setattr(opt, 'work_dir', os.path.join(opt.data_dir, 'pywork'))
-setattr(opt, 'crop_dir', os.path.join(opt.data_dir, 'pycrop'))
-setattr(opt, 'frames_dir', os.path.join(opt.data_dir, 'pyframes'))  # Ensure frames_dir is set
+    # Set directory attributes
+    setattr(opt, 'avi_dir', os.path.join(opt.data_dir, 'pyavi'))
+    setattr(opt, 'tmp_dir', os.path.join(opt.data_dir, 'pytmp'))
+    setattr(opt, 'work_dir', os.path.join(opt.data_dir, 'pywork'))
+    setattr(opt, 'crop_dir', os.path.join(opt.data_dir, 'pycrop'))
+    setattr(opt, 'frames_dir', os.path.join(opt.data_dir, 'pyframes'))
 
-# Validate input arguments
-if not os.path.isfile(opt.videofile):
-    raise FileNotFoundError(f"Video file not found: {opt.videofile}")
-if not opt.reference:
-    raise ValueError("Reference name must be provided")
-if not os.path.isfile(opt.s3fd_model):
-    raise FileNotFoundError(f"S3FD model file not found: {opt.s3fd_model}")
-if not os.path.isfile(opt.syncnet_model):
-    raise FileNotFoundError(f"SyncNet model file not found: {opt.syncnet_model}")
+    return opt
 
 # ========== IOU FUNCTION ==========
 
@@ -290,8 +285,19 @@ def save_stage2_results(opt, dists):
     with open(savepath, 'wb') as fil:
         pickle.dump(dists, fil)
 # ========== MAIN ENDPOINT FUNCTION ==========
+
 def process_video(opt):
     """Main endpoint function to process the video through Stage I and Stage II."""
+    # Validate input arguments
+    if not os.path.isfile(opt.videofile):
+        raise FileNotFoundError(f"Video file not found: {opt.videofile}")
+    if not opt.reference:
+        raise ValueError("Reference name must be provided")
+    if not os.path.isfile(opt.s3fd_model):
+        raise FileNotFoundError(f"S3FD model file not found: {opt.s3fd_model}")
+    if not os.path.isfile(opt.syncnet_model):
+        raise FileNotFoundError(f"SyncNet model file not found: {opt.syncnet_model}")
+
     try:
         # Stage I: Face Tracking and Cropping
         print("Starting Stage I: Face Tracking and Cropping...")
@@ -344,7 +350,10 @@ def process_video(opt):
         print(f"Error during video processing: {str(e)}")
         raise
 
-# ========== EXECUTE MAIN ==========
+def main():
+    """Main entry point for the SyncNet pipeline."""
+    opt = parse_args()
+    process_video(opt)
 
 if __name__ == "__main__":
-    process_video(opt)
+    main()
