@@ -5,17 +5,27 @@ This package provides tools for:
 1. Removing temporal lags between the audio and visual streams in a video
 2. Determining who is speaking amongst multiple faces in a video
 3. Complete video preprocessing pipeline including face detection and tracking
+
+Simple usage:
+    from syncnet_python import run_pipeline, run_syncnet, run_visualise
+    
+    # Run preprocessing
+    pipeline_results = run_pipeline('video.mp4', 'my_video', './output')
+    
+    # Run SyncNet analysis
+    syncnet_results = run_syncnet('video.mp4', 'my_video', './output')
+    
+    # Run visualization
+    visualise_results = run_visualise('video.mp4', 'my_video', './output')
 """
 
 from .SyncNetInstance import SyncNetInstance
 from .SyncNetModel import S, save, load
-from .preprocessing import (
-    preprocess_video,
-    inference_video,
-    scene_detect,
-    track_shot,
-    crop_video,
-    bb_intersection_over_union
+from .pipeline_functions import (
+    run_pipeline,
+    run_syncnet,
+    run_visualise,
+    run_complete_pipeline
 )
 
 __version__ = "1.0.0"
@@ -27,10 +37,8 @@ __all__ = [
     "S", 
     "save",
     "load",
-    "preprocess_video",
-    "inference_video",
-    "scene_detect",
-    "track_shot",
-    "crop_video",
-    "bb_intersection_over_union"
+    "run_pipeline",
+    "run_syncnet", 
+    "run_visualise",
+    "run_complete_pipeline"
 ]
