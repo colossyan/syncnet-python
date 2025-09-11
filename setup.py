@@ -17,7 +17,7 @@ setup(
     name="syncnet-python",
     version="1.0.0",
     author="Colossyan",
-    author_email="info@colossyan.com",
+    author_email="ahmad@colossyan.com",
     description="Audio-to-video synchronisation network for lip sync and speaker identification",
     long_description=long_description,
     long_description_content_type="text/markdown",
