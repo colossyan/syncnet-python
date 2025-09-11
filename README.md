@@ -8,18 +8,58 @@ This repository contains the demo for the audio-to-video synchronisation network
 
 Please cite the paper below if you make use of the software. 
 
-## Dependencies
+## Installation
+
+### Option 1: Install from GitHub (Recommended)
+```bash
+pip install git+https://github.com/colossyan/syncnet-python.git
 ```
+
+### Option 2: Install from source
+```bash
+git clone https://github.com/colossyan/syncnet-python.git
+cd syncnet-python
+pip install -e .
+```
+
+### Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
 In addition, `ffmpeg` is required.
 
+## Usage
 
-## Demo
+### As a Python Package
+
+```python
+from syncnet_python import SyncNetInstance
+
+# Initialize SyncNet
+syncnet = SyncNetInstance()
+
+# Load pre-trained model
+syncnet.loadParameters('path/to/pretrained_model.pth')
+
+# Evaluate a video
+class Args:
+    def __init__(self):
+        self.tmp_dir = '/tmp/syncnet'
+        self.reference = 'test_video'
+        self.batch_size = 20
+        self.vshift = 10
+
+opt = Args()
+offset, conf, dists = syncnet.evaluate(opt, 'path/to/video.mp4')
+print(f"Audio-Video offset: {offset}")
+print(f"Confidence: {conf}")
+```
+
+### Command Line Usage
 
 SyncNet demo:
-```
+```bash
 python demo_syncnet.py --videofile data/example.avi --tmp_dir /path/to/temp/directory
 ```
 
@@ -31,7 +71,7 @@ Confidence:     10.021
 ```
 
 Full pipeline:
-```
+```bash
 sh download_model.sh
 python run_pipeline.py --videofile /path/to/video.mp4 --reference name_of_video --data_dir /path/to/output
 python run_syncnet.py --videofile /path/to/video.mp4 --reference name_of_video --data_dir /path/to/output

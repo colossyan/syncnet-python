@@ -43,3 +43,4 @@ data/
 protos/
 utils/
 *.pth
+syncnet_python.egg-info/
