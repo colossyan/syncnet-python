@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument('--frame_rate', type=int, default=25, help='Frame rate')
     parser.add_argument('--num_failed_det', type=int, default=25, help='Number of missed detections allowed before tracking is stopped')
     parser.add_argument('--min_face_size', type=int, default=100, help='Minimum face size in pixels')
-    parser.add_argument('--s3fd_model', type=str, default='data/s3fd.model', help='Path to S3FD model file')
+    parser.add_argument('--s3fd_model', type=str, default='detectors/s3fd/weights/sfd_face.pth', help='Path to S3FD model file')
     parser.add_argument('--syncnet_model', type=str, default='data/syncnet_v2.model', help='Path to SyncNet model file')
     parser.add_argument('--batch_size', type=int, default=20, help='Batch size for SyncNet evaluation')
     parser.add_argument('--vshift', type=int, default=15, help='Video shift for SyncNet evaluation')
